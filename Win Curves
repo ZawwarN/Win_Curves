@@ -1,0 +1,68 @@
+-- Format all raw data
+
+SELECT
+    l.player,
+    l.season,
+    l.team,
+    l.LEBRON as value,
+    p.mpg as minutes,
+    p.games_played,
+    (p.mpg * l.lebron) as square_area
+FROM "Win_curves_LeBron_Corrected.csv" as l
+LEFT JOIN "Win_curves_Player_Minutes.csv" as p ON l.player = p.Player_Minutes 
+AND l.season = p.year 
+AND p.mpg >= 20
+AND p.games_played >=10 
+where p.mpg is not null
+AND p.games_played is not null
+
+
+--graph cahrt 1
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# Merge the datasets if necessary (adjust based on how you want to combine them)
+# For example, this merges them based on player names and seasons
+combined_df = pd.read_csv("lebron stats merge_2024-03-24T1615.csv")
+
+# Adjust LEBRON scores by adding 4 to each
+combined_df["Adjusted_LEBRON"] = combined_df["LEBRON"] + 4
+
+# Plotting
+plt.figure(figsize=(15, 10))
+
+for season in combined_df["SEASON"].unique():
+    season_data = combined_df[combined_df["SEASON"] == season]
+
+    # Sorting by MPG for better line plotting
+    season_data = season_data.sort_values("MPG")
+
+    plt.plot(
+        season_data["MPG"], season_data["Adjusted_LEBRON"], marker="o", label=season
+    )
+
+plt.title("Players MPG vs. Adjusted LEBRON Score by Season")
+plt.xlabel("Minutes Per Game (MPG)")
+plt.ylabel("Adjusted LEBRON Score")
+plt.legend(title="Season", bbox_to_anchor=(1.05, 1), loc="upper left")
+plt.grid(True)
+plt.show()
+
+
+--get team squared values
+
+SELECT
+    l.season,
+    SUM(p.mpg * l.LEBRON) as total_value
+FROM "Win_curves_LeBron_Corrected.csv" as l
+LEFT JOIN "Win_curves_Player_Minutes.csv" as p 
+ON l.player = p.Player_Minutes 
+AND l.season = p.year 
+WHERE p.mpg IS NOT NULL
+AND p.games_played IS NOT NULL
+AND p.games_played >= 10
+AND p.mpg >= 20
+GROUP BY l.season
+ORDER BY total_value DESC
